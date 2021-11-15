@@ -1,0 +1,133 @@
+#!/usr/bin/env bash
+#
+# Manage plex media server installations (for Linux)
+#
+# Author: Dave Eddy <dave@daveeddy.com>
+# Date: May 18, 2021
+# License: MIT
+
+plexurl='https://plex.tv/downloads/latest/1?'
+plexurl+='build=linux-ubuntu-x86_64'
+plexurl+='&distro=ubuntu'
+plexurl+='&channel=16'
+
+# colors
+mag=$(tput setaf 5)
+gry=$(tput setaf 8)
+rst=$(tput sgr0)
+
+# print a colored log message
+log() {
+	local name=$1
+	shift
+	echo "$mag$name: $gry" "$@" "$rst"
+}
+
+# print a message to stderr and exit
+fatal() {
+	log FATAL "$@" >&2
+	exit 1
+}
+
+# print the usage message
+usage() {
+	local prog=${0##*/}
+	cat <<-EOF
+	Usage: $prog [-afnh] [-d <dir>]
+
+	Manage installations of Plex Media Server for Linux.
+
+	Options:
+	    -a         create/set the symlink "active" to the newly installed package
+	    -d <dir>   the dir to work in, defaults to CWD
+	    -f         force installation if it already exists
+	    -h         print this message and exit
+	    -n         dry-urn, defaults to false
+	EOF
+}
+
+# cd into a directory and exit if it errors
+safe-cd() {
+	[[ -n $1 ]] || fatal 'no argument given to safe-cd'
+	cd "$1" || fatal "failed to chdir into $1 from $PWD"
+	log 'chdir' "$PWD"
+}
+
+# parse options
+dir=
+dryrun='false'
+force='false'
+activate='false'
+while getopts 'ad:fhn' opt; do
+	case "$opt" in
+		a) activate='true';;
+		d) dir=$OPTARG;;
+		f) force='true';;
+		h) usage; exit 0;;
+		n) dryrun='true';;
+		*) usage >&2; exit 1;;
+	esac
+done
+
+shift "$((OPTIND - 1))"
+
+# go into the dir
+[[ -n $dir ]] || dir=$PWD
+safe-cd "$dir"
+
+# get the latest version URL and number
+url=$(curl -sSI "$plexurl" | grep ^Location: | tr -d '[[:cntrl:]]' | cut -d ' ' -f 2-)
+deb=${url##*/}
+version=${deb%.deb}
+[[ -n $url && -n $version ]] || fatal 'failed to extract latest version and download url'
+
+log 'latest' "$version"
+
+# check if this version already exists
+dir=$version
+if [[ -d $dir ]]; then
+	echo 'version already installed'
+	if $force; then
+		log 'force' 'ignoring installed version'
+	else
+		exit 0
+	fi
+fi
+
+# finish here if dry-run
+if $dryrun; then
+	log 'dry-run' 'exiting'
+	exit 0
+fi
+
+# version doesn't exist - let's get it!
+rootdir=$dir/root
+pkgdir=$dir/pkg
+
+# create the necessary directories
+mkdir -p "$dir" "$rootdir" "$pkgdir"
+deb=$pkgdir/$deb
+data=$pkgdir/data.tar.xz
+
+# pull the deb file
+log 'download' "$deb"
+curl -o "$deb" "$url" || fatal "failed to download $url"
+
+# extract the deb
+log 'extract' "deb $deb"
+ar x "$deb" --output "$pkgdir" || fatal "failed to unarchive deb $deb"
+[[ -f $data ]] || fatal "$data not found inside $deb"
+
+# extract the tarball in th deb
+log 'extract' "tar $data"
+tar xf "$data" -C "$rootdir" || fatal "failed to extract $data"
+
+# set the symlink if -a is set
+if $activate; then
+	log 'link' "$version as active"
+	ln -Tsf "$version" 'active' || fatal 'failed to set active'
+fi
+
+# done
+log 'finish' "$PWD/$dir"
+echo 'done!'
