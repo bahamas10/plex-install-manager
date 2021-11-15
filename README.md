@@ -77,6 +77,7 @@ Usage
         -f         force installation if it already exists
         -h         print this message and exit
         -n         dry-urn, defaults to false
+        -t <token> optional Plex Pass token
 
 License
 -------

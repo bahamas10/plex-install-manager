@@ -9,7 +9,6 @@
 plexurl='https://plex.tv/downloads/latest/1?'
 plexurl+='build=linux-ubuntu-x86_64'
 plexurl+='&distro=ubuntu'
-plexurl+='&channel=16'
 
 # colors
 mag=$(tput setaf 5)
@@ -43,6 +42,7 @@ usage() {
 	    -f         force installation if it already exists
 	    -h         print this message and exit
 	    -n         dry-urn, defaults to false
+	    -t <token> optional Plex Pass token
 	EOF
 }
 
@@ -58,13 +58,15 @@ dir=
 dryrun='false'
 force='false'
 activate='false'
-while getopts 'ad:fhn' opt; do
+token=
+while getopts 'ad:fhnt:' opt; do
 	case "$opt" in
 		a) activate='true';;
 		d) dir=$OPTARG;;
 		f) force='true';;
 		h) usage; exit 0;;
 		n) dryrun='true';;
+		t) token=$OPTARG;;
 		*) usage >&2; exit 1;;
 	esac
 done
@@ -74,6 +76,14 @@ shift "$((OPTIND - 1))"
 # go into the dir
 [[ -n $dir ]] || dir=$PWD
 safe-cd "$dir"
+
+# check if token was provided
+if [[ -n $token ]]; then
+	plexurl+="&X-Plex-Token=$token"
+	plexurl+="&channel=8"
+else
+	plexurl+='&channel=16'
+fi
 
 # get the latest version URL and number
 url=$(curl -sSI "$plexurl" | grep ^Location: | tr -d '[[:cntrl:]]' | cut -d ' ' -f 2-)
