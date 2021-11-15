@@ -30,6 +30,10 @@ Install the latest version of plex and activate it:
     link:  plexmediaserver_1.24.5.5173-8dcc73a59_amd64 as active
     finish:  /opt/plex/src/plexmediaserver_1.24.5.5173-8dcc73a59_amd64
     done!
+
+This ensures that plex is installed to `/opt/plex/src/active`.  You can verify
+this with:
+
     $ ls -lh /opt/plex/src
     total 2.0K
     lrwxrwxrwx 1 root root 43 Nov 15 02:44 active -> plexmediaserver_1.24.5.5173-8dcc73a59_amd64/
@@ -37,8 +41,7 @@ Install the latest version of plex and activate it:
     drwxr-xr-x 4 root root  4 Jun 20 21:30 plexmediaserver_1.23.2.4656-85f0adf5b_amd64/
     drwxr-xr-x 4 root root  4 Nov 15 02:44 plexmediaserver_1.24.5.5173-8dcc73a59_amd64/
 
-This ensures that plex is installed to `/opt/plex/src/active`.  To start the server,
-you can run something like this:
+To start the server you can run something like this:
 
 ``` bash
 cd /opt/plex/src/active/root/usr/lib/plexmediaserver || exit 1
@@ -46,6 +49,9 @@ export PLEX_MEDIA_SERVER_HOME=/opt/plex/src/active/root/usr/lib/plexmediaserver
 export PLEX_MEDIA_SERVER_APPLICATION_SUPPORT_DIR=/opt/plex/data
 exec chpst -u _plex:_plex ./Plex\ Media\ Server
 ```
+
+Because of the `active` symlink you will only need to restart the Plex service
+after a new update is installed for it to take effect.
 
 Dry Run
 -------
