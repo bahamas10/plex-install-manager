@@ -86,7 +86,7 @@ else
 fi
 
 # get the latest version URL and number
-url=$(curl -sSI "$plexurl" | grep ^Location: | tr -d '[[:cntrl:]]' | cut -d ' ' -f 2-)
+url=$(curl -sSI "$plexurl" | grep -i ^location: | tr -d '[[:cntrl:]]' | cut -d ' ' -f 2-)
 deb=${url##*/}
 version=${deb%.deb}
 [[ -n $url && -n $version ]] || fatal 'failed to extract latest version and download url'
