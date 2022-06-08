@@ -76,7 +76,7 @@ Usage
         -d <dir>   the dir to work in, defaults to CWD
         -f         force installation if it already exists
         -h         print this message and exit
-        -n         dry-urn, defaults to false
+        -n         dry-run, defaults to false
         -t <token> optional Plex Pass token
 
 License
